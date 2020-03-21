@@ -1,3 +1,4 @@
+// From https://www.w3.org/TR/webmidi/
 class Synth {
     constructor() {
         this.context = null; // the Web Audio "context" object

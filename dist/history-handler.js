@@ -39,3 +39,4 @@ class HistoryHandler {
         return this._history;
     }
 }
+export const historyHandler = new HistoryHandler();

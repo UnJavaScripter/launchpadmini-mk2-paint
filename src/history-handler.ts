@@ -1,8 +1,5 @@
-interface PaintAction {
-  action: number;
-  color: number;
-  key: number;
-}
+import { PaintAction } from './models.js'
+
 
 class HistoryHandler {
   private _history: PaintAction[];
@@ -58,3 +55,5 @@ class HistoryHandler {
   }
 
 }
+
+export const historyHandler = new HistoryHandler();

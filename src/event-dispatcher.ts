@@ -1,12 +1,11 @@
-const historyHandler = new HistoryHandler();
-interface KeyColor {
-  color: number
-}
-class KeyHandler {
-  selectedPaintColor: number;
-  selectedControlKey: number;
-  pulseRaf: number;
-  litKeys: Map<number, KeyColor> = new Map();
+import { canvasController } from './canvas-controller.js';
+import { launchpadController } from './launchpad-controller.js';
+import { historyHandler } from './history-handler.js';
+import { KeyColor } from './models';
+import { stateController } from './state-controller.js';
+
+class EventDispatcher {
+
   controlKeys: Map<number, KeyColor> = new Map([
     [8, { color: 5 }],
     [24, { color: 15 }],
@@ -17,39 +16,43 @@ class KeyHandler {
     [104, { color: 61 }],
     [120, { color: 60 }],
   ]);
+  private _selectedPaintColor: number;
+  selectedControlKey: number;
+  pulseRaf: number;
+  litKeys: Map<number, KeyColor> = new Map();
 
-  handleUserAction(midiOut: WebMidi.MIDIOutput, key: number, color: number = this.selectedPaintColor, skipHistory = false) {
-    if (this.litKeys.has(key) && this.litKeys.get(key).color === color) {
-      this.litKeys.delete(key);
-      this.erase(midiOut, key, skipHistory);
-    } else {
-      this.litKeys.set(key, { color });
-      this.paint(midiOut, key, color, skipHistory);
-    }
+  constructor() {
   }
 
-  private paint(midiOut: WebMidi.MIDIOutput, key: number, color: number, skipHistory = false) {
+  get selectedPaintColor() {
+    return this._selectedPaintColor;
+  }
+
+  paint(key: number, color: number = this.selectedPaintColor, skipHistory = true) {
+    stateController.activePixels.set(key, { color });
+
     if (!skipHistory) {
       historyHandler.push({ action: 144, key, color });
     }
-    midiOut.send([144, key, color]);
+    this.handlePixelPaint(key, color);
   }
 
+  erase(key: number, skipHistory = false) {
+    stateController.activePixels.delete(key);
 
-  private erase(midiOut: WebMidi.MIDIOutput, key: number, skipHistory = false) {
     if (!skipHistory) {
       historyHandler.push({ action: 0, key, color: 0 });
     }
-    midiOut.send([128, key, 0]);
+    this.handlePixelErase(key);
   }
 
-  repaint(midiOut: WebMidi.MIDIOutput) {
+  repaint() {
     this.clearAllPaint();
     historyHandler.history.forEach(historyElem => {
       if (historyElem.color) {
-        this.paint(midiOut, historyElem.key, historyElem.color, true);
+        this.paint(historyElem.key, historyElem.color, true);
       } else {
-        this.erase(midiOut, historyElem.key, true);
+        this.erase(historyElem.key, true);
       }
     });
     this.paintControlKeys();
@@ -57,28 +60,28 @@ class KeyHandler {
 
   clearAllPaint() { // fixxx
     for (let i = 0; i <= 120; i++) {
-      this.erase(midiOut, i, true);
+      this.erase(i, true);
     }
   }
 
   paintControlKeys() {
     this.controlKeys.forEach((controlKey, index) => {
-      this.paint(midiOut, index, controlKey.color, true);
+      this.paint(index, controlKey.color, true);
     })
   }
 
   handleControlKey(key) {
-    this.selectedPaintColor = this.controlKeys.get(key).color;
+    this._selectedPaintColor = this.controlKeys.get(key).color;
     let now = window.performance.now();
     let isOn = false;
 
     const rafCB = () => {
       if (window.performance.now() >= now + 600) {
         if (isOn) {
-          midiOut.send([144, this.selectedControlKey, 0]);
+          this.erase(this.selectedControlKey);
           isOn = false
         } else {
-          midiOut.send([144, this.selectedControlKey, this.selectedPaintColor]);
+          this.paint(this.selectedControlKey, this._selectedPaintColor);
           isOn = true
         }
         now = window.performance.now();
@@ -95,4 +98,14 @@ class KeyHandler {
       this.pulseRaf = window.requestAnimationFrame(rafCB);
     }
   }
+
+  private handlePixelPaint(key: number, color: number) {
+    launchpadController.paint(key, color);
+  }
+  
+  private handlePixelErase(key: number) {
+    launchpadController.erase(key);
+  }
 }
+
+export const eventDispatcher = new EventDispatcher();
