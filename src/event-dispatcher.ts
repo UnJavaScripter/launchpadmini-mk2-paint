@@ -16,12 +16,32 @@ class EventDispatcher {
     [104, { color: 61 }],
     [120, { color: 60 }],
   ]);
+  private launchpadCanvasEQTable : Map<number, [number, number]> = new Map();
   private _selectedPaintColor: number;
   selectedControlKey: number;
   pulseRaf: number;
   litKeys: Map<number, KeyColor> = new Map();
 
   constructor() {
+    for(let key = 0 ; key <= 119 ; key++ ) {
+      if(key <= 7) {
+        this.launchpadCanvasEQTable.set(key, [key, 0]);
+      }else if(key > 7 && key <= 23-8) {
+        this.launchpadCanvasEQTable.set(key + 8, [(key - 8), 1]);
+      }else if(key > 23 && key <= 39-8) {
+        this.launchpadCanvasEQTable.set(key + 8, [(key - 24), 2]);
+      }else if(key > 39 && key <= 55-8) {
+        this.launchpadCanvasEQTable.set(key + 8, [(key - 40), 3]);
+      }else if(key > 55 && key <= 71-8) {
+        this.launchpadCanvasEQTable.set(key + 8, [(key - 56), 4]);
+      }else if(key > 71 && key <= 87-8) {
+        this.launchpadCanvasEQTable.set(key + 8, [(key - 72), 5]);
+      }else if(key > 87 && key <= 103-8) {
+        this.launchpadCanvasEQTable.set(key + 8, [(key - 88), 6]);
+      }else if(key > 103 && key <= 119-8) {
+        this.launchpadCanvasEQTable.set(key + 8, [(key - 104), 7]);
+      }
+    }
   }
 
   get selectedPaintColor() {
@@ -35,6 +55,14 @@ class EventDispatcher {
       historyHandler.push({ action: 144, key, color });
     }
     this.handlePixelPaint(key, color);
+  }
+
+  paintFromCoords(x: number, y: number) {
+    // const pixelXstart = x - (x % canvasController.pixelSize.x);
+    // const pixelYstart = y - (y % canvasController.pixelSize.y);
+    // console.log(`::: original coords ${x}, ${y}`)
+    // console.log(`::: converted coords ${pixelXstart}, ${pixelYstart}`)
+    canvasController.drawPixel(x, y)
   }
 
   erase(key: number, skipHistory = false) {
@@ -78,10 +106,10 @@ class EventDispatcher {
     const rafCB = () => {
       if (window.performance.now() >= now + 600) {
         if (isOn) {
-          this.erase(this.selectedControlKey);
+          this.erase(this.selectedControlKey, true);
           isOn = false
         } else {
-          this.paint(this.selectedControlKey, this._selectedPaintColor);
+          this.paint(this.selectedControlKey, this._selectedPaintColor, true);
           isOn = true
         }
         now = window.performance.now();
@@ -101,6 +129,10 @@ class EventDispatcher {
 
   private handlePixelPaint(key: number, color: number) {
     launchpadController.paint(key, color);
+    const pixelCanvasLocation = this.launchpadCanvasEQTable.get(key);
+    if(pixelCanvasLocation) {
+      canvasController.drawPixel(pixelCanvasLocation[0], pixelCanvasLocation[1]);
+    }
   }
   
   private handlePixelErase(key: number) {

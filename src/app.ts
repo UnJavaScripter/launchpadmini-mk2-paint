@@ -73,6 +73,7 @@ class App {
         return;
       }
       if (velocity == 127 && !isControlKey) {
+        console.log(key)
         interactionController.handleUserAction(key);
       }
     

@@ -33,9 +33,11 @@ class InteractionController {
     }
     pointerDraw(event) {
         if (event.buttons === 1) {
-            const correctedX = event.x - 9;
-            const correctedY = event.y - 9;
-            this.paint(112);
+            const correctedX = event.x;
+            const correctedY = event.y;
+            const x = event.clientX - canvasController.canvasElem.getBoundingClientRect().left;
+            const y = event.clientY - canvasController.canvasElem.getBoundingClientRect().top;
+            eventDispatcher.paintFromCoords(x / 2, y / 2);
         }
     }
 }

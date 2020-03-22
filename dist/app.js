@@ -73,6 +73,7 @@ class App {
                 return;
             }
             if (velocity == 127 && !isControlKey) {
+                console.log(key);
                 interactionController.handleUserAction(key);
             }
             // Mask off the lower nibble (MIDI channel, which we don't care about)
