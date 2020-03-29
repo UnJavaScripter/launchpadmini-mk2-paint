@@ -1,132 +1,131 @@
 import { canvasController } from './canvas-controller.js';
 import { launchpadController } from './launchpad-controller.js';
-import { historyHandler } from './history-handler.js';
+// import { historyHandler } from './history-handler.js';
 import { stateController } from './state-controller.js';
+import { Synth } from './synth.js';
+const synth = new Synth();
 class EventDispatcher {
     constructor() {
-        this.controlKeys = new Map([
-            [8, { color: 5 }],
-            [24, { color: 15 }],
-            [40, { color: 23 }],
-            [56, { color: 35 }],
-            [72, { color: 25 }],
-            [88, { color: 54 }],
-            [104, { color: 61 }],
-            [120, { color: 60 }],
+        this.colorsEQtable = new Map([
+            [5, "#e4585d"],
+            [15, "#e22323"],
+            [23, "#e46c58"],
+            [35, "#ff8b5e"],
+            [25, "#e0a448"],
+            [54, "#d4b336"],
+            [61, "#e8dd51"],
+            [60, "#5bdc60"],
         ]);
         this.launchpadCanvasEQTable = new Map();
-        this.litKeys = new Map();
-        for (let key = 0; key <= 119; key++) {
-            if (key <= 7) {
-                this.launchpadCanvasEQTable.set(key, [key, 0]);
-            }
-            else if (key > 7 && key <= 23 - 8) {
-                this.launchpadCanvasEQTable.set(key + 8, [(key - 8), 1]);
-            }
-            else if (key > 23 && key <= 39 - 8) {
-                this.launchpadCanvasEQTable.set(key + 8, [(key - 24), 2]);
-            }
-            else if (key > 39 && key <= 55 - 8) {
-                this.launchpadCanvasEQTable.set(key + 8, [(key - 40), 3]);
-            }
-            else if (key > 55 && key <= 71 - 8) {
-                this.launchpadCanvasEQTable.set(key + 8, [(key - 56), 4]);
-            }
-            else if (key > 71 && key <= 87 - 8) {
-                this.launchpadCanvasEQTable.set(key + 8, [(key - 72), 5]);
-            }
-            else if (key > 87 && key <= 103 - 8) {
-                this.launchpadCanvasEQTable.set(key + 8, [(key - 88), 6]);
-            }
-            else if (key > 103 && key <= 119 - 8) {
-                this.launchpadCanvasEQTable.set(key + 8, [(key - 104), 7]);
+        this.coordsAndKeys = [];
+        this.coordsAndKeys = [
+            [0, 1, 2, 3, 4, 5, 6, 7],
+            [16, 17, 18, 19, 20, 21, 22, 23],
+            [32, 33, 34, 35, 36, 37, 38, 39],
+            [48, 49, 50, 51, 52, 53, 54, 55],
+            [64, 65, 66, 67, 68, 69, 70, 71],
+            [80, 81, 82, 83, 84, 85, 86, 87],
+            [96, 97, 98, 99, 100, 101, 102, 103],
+            [112, 113, 114, 115, 116, 117, 118, 119]
+        ];
+    }
+    paintFromLaunchpad(key, color = stateController.selectedPaintColor) {
+        for (let row = 0; row < this.coordsAndKeys.length; row++) {
+            for (let col = 0; col < this.coordsAndKeys[row].length; col++) {
+                if (this.coordsAndKeys[row][col] === key) {
+                    this.paintToAll(row, col);
+                    return;
+                }
             }
         }
     }
-    get selectedPaintColor() {
-        return this._selectedPaintColor;
+    paintToAll(row, col) {
+        const selectedColorId = stateController.selectedPaintColor;
+        const selectedColorHex = this.colorsEQtable.get(stateController.selectedPaintColor);
+        stateController.activePixels.set(this.coordsAndKeys[row][col], { color: selectedColorId, row, col });
+        canvasController.drawPixel(row, col, selectedColorHex);
+        launchpadController.paint(this.coordsAndKeys[row][col], selectedColorId);
     }
-    paint(key, color = this.selectedPaintColor, skipHistory = true) {
-        stateController.activePixels.set(key, { color });
-        if (!skipHistory) {
-            historyHandler.push({ action: 144, key, color });
+    paintFromCanvas(row, col) {
+        const key = this.coordsAndKeys[row][col];
+        if (stateController.activePixels.has(key)) {
+            this.erase(row, col);
         }
-        this.handlePixelPaint(key, color);
+        else {
+            this.paintToAll(row, col);
+        }
     }
-    paintFromCoords(x, y) {
-        // const pixelXstart = x - (x % canvasController.pixelSize.x);
-        // const pixelYstart = y - (y % canvasController.pixelSize.y);
-        // console.log(`::: original coords ${x}, ${y}`)
-        // console.log(`::: converted coords ${pixelXstart}, ${pixelYstart}`)
-        canvasController.drawPixel(x, y);
-    }
-    erase(key, skipHistory = false) {
+    erase(row, col) {
+        const key = this.coordsAndKeys[row][col];
         stateController.activePixels.delete(key);
-        if (!skipHistory) {
-            historyHandler.push({ action: 0, key, color: 0 });
-        }
-        this.handlePixelErase(key);
+        launchpadController.erase(key);
+        canvasController.erase(row, col);
     }
-    repaint() {
-        this.clearAllPaint();
-        historyHandler.history.forEach(historyElem => {
-            if (historyElem.color) {
-                this.paint(historyElem.key, historyElem.color, true);
+    handleLaunchpadKey(status, key, velocity, isControlKey) {
+        if (isControlKey && velocity) {
+            eventDispatcher.handleControlKey(key);
+            return;
+        }
+        if (velocity == 127 && !isControlKey) {
+            const keyIsActive = stateController.activePixels.has(key);
+            if (keyIsActive) {
+                const keyRef = stateController.activePixels.get(key);
+                this.erase(keyRef.row, keyRef.col);
             }
             else {
-                this.erase(historyElem.key, true);
+                this.paintFromLaunchpad(key);
             }
-        });
-        this.paintControlKeys();
-    }
-    clearAllPaint() {
-        for (let i = 0; i <= 120; i++) {
-            this.erase(i, true);
+        }
+        // Mask off the lower nibble (MIDI channel, which we don't care about)
+        switch (status & 0xf0) {
+            case 0x90:
+                if (velocity != 0) { // if velocity != 0, this is a note-on message
+                    synth.noteOn(key);
+                    return;
+                }
+            // if velocity == 0, fall thru: it's a note-off.  MIDI's weird, y'all.
+            case 0x80:
+                synth.noteOff(key);
+                return;
         }
     }
-    paintControlKeys() {
-        this.controlKeys.forEach((controlKey, index) => {
-            this.paint(index, controlKey.color, true);
-        });
+    setSelectedPaintColor(colorId) {
+        stateController.selectedPaintColor = colorId;
+    }
+    handleControlKeyFromCanvas(row) {
+        row++;
+        this.setSelectedPaintColor(launchpadController.controlKeys.get(8 * (2 * row - 1)).color);
+        console.info(launchpadController.controlKeys.get(8 * (2 * row - 1)).color);
     }
     handleControlKey(key) {
-        this._selectedPaintColor = this.controlKeys.get(key).color;
+        const keyRef = launchpadController.controlKeys.get(key);
+        this.setSelectedPaintColor(keyRef.color);
         let now = window.performance.now();
         let isOn = false;
-        const rafCB = () => {
+        const blinkControlKey = () => {
             if (window.performance.now() >= now + 600) {
                 if (isOn) {
-                    this.erase(this.selectedControlKey, true);
+                    this.erase(keyRef.row, keyRef.col);
                     isOn = false;
                 }
                 else {
-                    this.paint(this.selectedControlKey, this._selectedPaintColor, true);
+                    this.paintFromLaunchpad(this.selectedControlKey, stateController.selectedPaintColor);
                     isOn = true;
                 }
                 now = window.performance.now();
             }
-            this.pulseRaf = window.requestAnimationFrame(rafCB);
+            this.pulseRaf = window.requestAnimationFrame(blinkControlKey);
         };
         if (!this.selectedControlKey) {
             this.selectedControlKey = key;
-            this.pulseRaf = window.requestAnimationFrame(rafCB);
+            this.pulseRaf = window.requestAnimationFrame(blinkControlKey);
         }
         else {
-            this.paintControlKeys();
+            launchpadController.paintControlKeys();
             this.selectedControlKey = key;
             window.cancelAnimationFrame(this.pulseRaf);
-            this.pulseRaf = window.requestAnimationFrame(rafCB);
+            this.pulseRaf = window.requestAnimationFrame(blinkControlKey);
         }
-    }
-    handlePixelPaint(key, color) {
-        launchpadController.paint(key, color);
-        const pixelCanvasLocation = this.launchpadCanvasEQTable.get(key);
-        if (pixelCanvasLocation) {
-            canvasController.drawPixel(pixelCanvasLocation[0], pixelCanvasLocation[1]);
-        }
-    }
-    handlePixelErase(key) {
-        launchpadController.erase(key);
     }
 }
 export const eventDispatcher = new EventDispatcher();

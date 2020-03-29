@@ -1,5 +1,5 @@
 // From https://www.w3.org/TR/webmidi/
-class Synth {
+export class Synth {
     constructor() {
         this.context = null; // the Web Audio "context" object
         this.oscillator = null; // the single oscillator

@@ -1,20 +1,29 @@
+import { eventDispatcher } from "./event-dispatcher.js";
 class CanvasController {
-    // drawning: Drawning;
-    constructor(pixelSize = 50) {
+    constructor() {
+        this.now = 0;
         this.controlColumnColors = ["#e4585d", "#e22323", "#e46c58", "#ff8b5e", "#e0a448", "#d4b336", "#e8dd51", "#5bdc60"];
+        this.canvasColors = { border: '#555', background: '#666' };
         this._canvasElem = document.getElementById('canvas');
         this.ctx = this.canvasElem.getContext('2d');
-        this.canvasBCR = this._canvasElem.getBoundingClientRect();
+        //
+        const dpi = window.devicePixelRatio;
+        const style_width = Number(getComputedStyle(this.canvasElem.parentElement).getPropertyValue("width").slice(0, -2));
+        const style_height = Number(getComputedStyle(this.canvasElem.parentElement).getPropertyValue("height").slice(0, -2));
+        this.canvasElem.setAttribute('width', String(style_width * dpi));
+        this.canvasElem.setAttribute('height', String((style_height * 7) * dpi));
+        //
         this.pixelSize = {
             x: this.canvasElem.width / 9,
             y: this.canvasElem.height / 8,
         };
-        console.log(this.pixelSize);
-        this.canvasElem.style.width = '100%';
-        this.canvasElem.style.height = '100%';
         this.lastDrawnPixel = {};
-        // this.selectedColor = colorPicker.selectedColor;
-        // this.drawning = {fileHandle: undefined};
+        this.canvasElem.addEventListener('pointerdown', (event) => {
+            this.handlePointerDown(event);
+        });
+        this.canvasElem.addEventListener('pointermove', (event) => {
+            this.handleDrag(event);
+        });
     }
     get canvasElem() {
         return this._canvasElem;
@@ -23,30 +32,63 @@ class CanvasController {
         this.drawGrid();
         // this.ranDraw(20)
     }
-    drawPixel(x, y, color = 'rebeccapurple', isHistoryEvent = false) {
-        console.log(x, y);
-        // const pixelXstart = x * this.pixelSize.x;
-        // const pixelYstart = y * this.pixelSize.y;
-        const pixelXstart = x - (x % this.pixelSize.x);
-        const pixelYstart = y - (y % this.pixelSize.y);
-        // console.log(`coords ${x},${y}`);
-        // console.log(`converter cooords ${pixelXstart}, ${pixelYstart}`)
-        // if(pixelXstart === this.lastDrawnPixel.x && pixelYstart === this.lastDrawnPixel.y && color === this.lastDrawnPixel.color) {
-        //   return;
-        // }
+    handlePointerDown(event) {
+        this.pointerDraw(event);
+    }
+    handleDrag(event) {
+        this.pointerDraw(event);
+    }
+    pointerDraw(event) {
+        if (event.buttons === 1) {
+            const x = event.clientX - canvasController.canvasElem.getBoundingClientRect().left;
+            const y = event.clientY - canvasController.canvasElem.getBoundingClientRect().top;
+            const col = Math.floor(x / this.pixelSize.x);
+            const row = Math.floor(y / this.pixelSize.y);
+            if ((event.movementX !== 0 || event.movementY !== 0) && this.lastDrawnPixel.col === col && this.lastDrawnPixel.row === row) {
+                return;
+            }
+            if (col >= (this.canvasElem.width / this.pixelSize.x) - 1) {
+                eventDispatcher.handleControlKeyFromCanvas(row);
+            }
+            else {
+                eventDispatcher.paintFromCanvas(row, col);
+            }
+        }
+    }
+    drawPixel(row, col, color) {
+        // Protect the control keys
+        if (col === 8) {
+            return;
+        }
+        if (!color) {
+            color = this.canvasColors.background;
+        }
+        const pixelXstart = col * this.pixelSize.x;
+        const pixelYstart = row * this.pixelSize.y;
+        this.lastDrawnPixel.col = col;
+        this.lastDrawnPixel.row = row;
         this.lastDrawnPixel.x = pixelXstart;
         this.lastDrawnPixel.y = pixelYstart;
         this.lastDrawnPixel.color = color;
         this.ctx.fillStyle = color;
+        this.ctx.strokeStyle = this.canvasColors.border;
         this.ctx.fillRect(pixelXstart, pixelYstart, this.pixelSize.x, this.pixelSize.y);
+        this.ctx.stroke();
         // this.ctx.fillText(`${pixelXstart}, ${pixelYstart}`, pixelXstart, pixelYstart, 800);
     }
+    erase(row, col) {
+        if (row === this.lastDrawnPixel.row && col === this.lastDrawnPixel.col) {
+            return;
+        }
+        console.log('borrando en canvas', row, col);
+        this.drawPixel(row, col);
+    }
     drawGrid() {
-        this.ctx.fillStyle = '#666';
-        this.ctx.strokeStyle = '#0ff';
+        this.ctx.fillStyle = this.canvasColors.background;
+        this.ctx.strokeStyle = this.canvasColors.border;
         this.ctx.fillRect(0, 0, this.canvasElem.width, this.canvasElem.height);
         this.ctx.strokeRect(0, 0, this.canvasElem.width, this.canvasElem.height);
-        this.ctx.strokeStyle = '#777';
+        this.ctx.strokeStyle = this.canvasColors.border;
         this.ctx.beginPath();
         for (let i = 0; i <= this.canvasElem.width; i += this.pixelSize.x) {
             this.ctx.moveTo(i, 0);
@@ -75,14 +117,9 @@ class CanvasController {
     //     }
     //   }
     // }
-    reDraw(pixels) {
-        console.log(pixels);
-        const raf = requestAnimationFrame(() => {
-            this.ctx.clearRect(0, 0, this.canvasElem.width, this.canvasElem.height);
-            this.drawGrid();
-            //   this.reDrawPixelsFromHistory(pixels);
-            cancelAnimationFrame(raf);
-        });
+    clearCanvas() {
+        this.ctx.clearRect(0, 0, this.canvasElem.width, this.canvasElem.height);
+        this.drawGrid();
     }
 }
 export const canvasController = new CanvasController();

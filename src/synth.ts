@@ -1,6 +1,6 @@
 // From https://www.w3.org/TR/webmidi/
 
-class Synth {
+export class Synth {
   context = null;   // the Web Audio "context" object
   oscillator = null;  // the single oscillator
   envelope = null;    // the envelope for the single oscillator

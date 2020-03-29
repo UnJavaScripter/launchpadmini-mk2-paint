@@ -1,5 +1,7 @@
-export interface KeyColor {
-  color: number
+export interface KeyProps {
+  color: number,
+  col: number,
+  row: number
 }
 
 export interface PaintAction {
