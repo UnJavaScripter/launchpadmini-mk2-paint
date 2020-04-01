@@ -80,6 +80,8 @@ class CanvasController {
     }
     if(!color) {
       color = this.canvasColors.background;
+    }else {
+      console.log('pintando', row, col)
     }
 
     const pixelXstart = col * this.pixelSize.x;
@@ -100,9 +102,6 @@ class CanvasController {
   }
 
   erase(row: number, col: number) {
-    if(row === this.lastDrawnPixel.row && col === this.lastDrawnPixel.col) {
-      return;
-    }
     console.log('borrando en canvas', row, col)
     this.drawPixel(row, col);
   }

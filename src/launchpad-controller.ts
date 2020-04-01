@@ -73,7 +73,7 @@ class LaunchpadController {
   paintControlKeys() {
     this.controlKeys.forEach((controlKey, index) => {
       this.paint(index, controlKey.color);
-    })
+    });
   }
 
   

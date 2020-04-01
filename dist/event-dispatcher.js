@@ -29,31 +29,49 @@ class EventDispatcher {
             [112, 113, 114, 115, 116, 117, 118, 119]
         ];
     }
-    paintFromLaunchpad(key, color = stateController.selectedPaintColor) {
+    paintFromLaunchpad(key, isControlKey = false) {
         for (let row = 0; row < this.coordsAndKeys.length; row++) {
             for (let col = 0; col < this.coordsAndKeys[row].length; col++) {
                 if (this.coordsAndKeys[row][col] === key) {
-                    this.paintToAll(row, col);
+                    this.paintToAll(row, col, isControlKey);
                     return;
                 }
             }
         }
     }
-    paintToAll(row, col) {
+    paintToAll(row, col, isControlKey = false) {
         const selectedColorId = stateController.selectedPaintColor;
         const selectedColorHex = this.colorsEQtable.get(stateController.selectedPaintColor);
-        stateController.activePixels.set(this.coordsAndKeys[row][col], { color: selectedColorId, row, col });
+        if (!isControlKey) {
+            stateController.activePixels.set(this.coordsAndKeys[row][col], { color: selectedColorId, row, col });
+        }
         canvasController.drawPixel(row, col, selectedColorHex);
         launchpadController.paint(this.coordsAndKeys[row][col], selectedColorId);
     }
     paintFromCanvas(row, col) {
         const key = this.coordsAndKeys[row][col];
-        if (stateController.activePixels.has(key)) {
+        const keyThatIsOn = stateController.activePixels.get(key);
+        let syntRAF;
+        if (keyThatIsOn && keyThatIsOn.color === stateController.selectedPaintColor) {
+            console.log('borrando');
             this.erase(row, col);
         }
         else {
+            console.log('pintando');
             this.paintToAll(row, col);
         }
+        this.handleSynth(144, key, 127);
+        this.now = performance.now();
+        const stopSynthSoundRAF = (() => {
+            if (performance.now() >= this.now + 170) {
+                this.handleSynth(144, key, 0);
+                window.cancelAnimationFrame(syntRAF);
+            }
+            else {
+                syntRAF = window.requestAnimationFrame(stopSynthSoundRAF);
+            }
+        });
+        syntRAF = window.requestAnimationFrame(stopSynthSoundRAF);
     }
     erase(row, col) {
         const key = this.coordsAndKeys[row][col];
@@ -67,15 +85,19 @@ class EventDispatcher {
             return;
         }
         if (velocity == 127 && !isControlKey) {
-            const keyIsActive = stateController.activePixels.has(key);
-            if (keyIsActive) {
+            const keyThatIsOn = stateController.activePixels.get(key);
+            if (keyThatIsOn && keyThatIsOn.color === stateController.selectedPaintColor) {
                 const keyRef = stateController.activePixels.get(key);
+                console.log('mandnando a borrar');
                 this.erase(keyRef.row, keyRef.col);
             }
             else {
                 this.paintFromLaunchpad(key);
             }
         }
+        this.handleSynth(status, key, velocity);
+    }
+    handleSynth(status, key, velocity) {
         // Mask off the lower nibble (MIDI channel, which we don't care about)
         switch (status & 0xf0) {
             case 0x90:
@@ -106,10 +128,12 @@ class EventDispatcher {
             if (window.performance.now() >= now + 600) {
                 if (isOn) {
                     this.erase(keyRef.row, keyRef.col);
+                    console.log('blinkOff');
                     isOn = false;
                 }
                 else {
-                    this.paintFromLaunchpad(this.selectedControlKey, stateController.selectedPaintColor);
+                    this.paintFromLaunchpad(this.selectedControlKey, true);
+                    console.log('blinkOn');
                     isOn = true;
                 }
                 now = window.performance.now();
@@ -117,10 +141,12 @@ class EventDispatcher {
             this.pulseRaf = window.requestAnimationFrame(blinkControlKey);
         };
         if (!this.selectedControlKey) {
+            console.log('!this.selectedControlKey');
             this.selectedControlKey = key;
             this.pulseRaf = window.requestAnimationFrame(blinkControlKey);
         }
         else {
+            console.log('this.selectedControlKey');
             launchpadController.paintControlKeys();
             this.selectedControlKey = key;
             window.cancelAnimationFrame(this.pulseRaf);
