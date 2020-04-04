@@ -1,5 +1,5 @@
 // From https://www.w3.org/TR/webmidi/
-export class Synth {
+class Synth {
     constructor() {
         this.context = null; // the Web Audio "context" object
         this.oscillator = null; // the single oscillator
@@ -8,7 +8,6 @@ export class Synth {
         this.release = 0.05; // release speed
         this.portamento = 0.05; // portamento/glide speed
         this.activeNotes = []; // the stack of actively-pressed keys
-        window.AudioContext = window.AudioContext;
         this.context = new AudioContext();
         // set up the basic oscillator chain, muted to begin with.
         this.oscillator = this.context.createOscillator();
@@ -44,3 +43,4 @@ export class Synth {
         }
     }
 }
+export const synth = new Synth();

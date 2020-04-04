@@ -10,29 +10,19 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import { canvasController } from './canvas-controller.js';
 import { eventDispatcher } from './event-dispatcher.js';
 import { launchpadController } from './launchpad-controller.js';
+import { serialController } from './serial-controller.js';
 class App {
     constructor() {
-        window.addEventListener('load', () => __awaiter(this, void 0, void 0, function* () {
+        window.addEventListener('DOMContentLoaded', () => __awaiter(this, void 0, void 0, function* () {
+            const serialConnectionButton = document.getElementById('serial-connection-btn');
+            const clearAllButton = document.getElementById('clear-btn');
+            clearAllButton.addEventListener('pointerdown', () => {
+                eventDispatcher.clearAll();
+            });
             launchpadController.init();
             canvasController.init();
+            serialController.init(serialConnectionButton);
             eventDispatcher.setSelectedPaintColor(60);
-            window.addEventListener('keydown', (event) => {
-                handleKeyUp(event);
-            });
-            function handleKeyUp(event) {
-                // if (event.keyCode === 89) {
-                //   if (event.ctrlKey) {
-                //     historyHandler.redo();
-                //     eventDispatcher.repaint();
-                //   }
-                // }
-                // if (event.keyCode === 90) {
-                //   if (event.ctrlKey) {
-                //     historyHandler.undo();
-                //     eventDispatcher.repaint();
-                //   }
-                // }
-            }
         }));
     }
 }

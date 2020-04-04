@@ -1,6 +1,6 @@
 // From https://www.w3.org/TR/webmidi/
 
-export class Synth {
+class Synth {
   context = null;   // the Web Audio "context" object
   oscillator = null;  // the single oscillator
   envelope = null;    // the envelope for the single oscillator
@@ -10,8 +10,6 @@ export class Synth {
   activeNotes = []; // the stack of actively-pressed keys
 
   constructor() {
-    window.AudioContext = window.AudioContext;
-
     this.context = new AudioContext();
 
         // set up the basic oscillator chain, muted to begin with.
@@ -50,3 +48,5 @@ export class Synth {
     }
   }
 }
+
+export const synth = new Synth();

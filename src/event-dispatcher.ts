@@ -1,10 +1,8 @@
 import { canvasController } from './canvas-controller.js';
 import { launchpadController } from './launchpad-controller.js';
-// import { historyHandler } from './history-handler.js';
 import { stateController } from './state-controller.js';
-import { Synth } from './synth.js';
-
-const synth = new Synth();
+import { synth } from './synth.js';
+import { serialController } from './serial-controller.js';
 
 class EventDispatcher {
   colorsEQtable : Map<number, string> = new Map([
@@ -57,6 +55,7 @@ class EventDispatcher {
 
     canvasController.drawPixel(row, col, selectedColorHex);
     launchpadController.paint(this.coordsAndKeys[row][col], selectedColorId);
+    this.handleLEDMatrixPainting();
     
   }
 
@@ -92,6 +91,14 @@ class EventDispatcher {
     stateController.activePixels.delete(key);
     launchpadController.erase(key);
     canvasController.erase(row, col);
+    this.handleLEDMatrixPainting();
+  }
+
+  clearAll() {
+    stateController.clearActivePixels();
+    serialController.clear();
+    launchpadController.clear();
+    canvasController.clear();
   }
 
   handleLaunchpadKey(status: number, key: number, velocity: number, isControlKey: boolean) {
@@ -144,32 +151,41 @@ class EventDispatcher {
     let now = window.performance.now();
     let isOn = false;
 
-    const blinkControlKey = () => {
-      if (window.performance.now() >= now + 600) {
-        if (isOn) {
-          this.erase(keyRef.row, keyRef.col);
-          console.log('blinkOff')
-          isOn = false;
-        } else {
-          this.paintFromLaunchpad(this.selectedControlKey, true);
-          console.log('blinkOn')
-          isOn = true;
-        }
-        now = window.performance.now();
-      }
-      this.pulseRaf = window.requestAnimationFrame(blinkControlKey);
-    }
-    if (!this.selectedControlKey) {
-      console.log('!this.selectedControlKey')
-      this.selectedControlKey = key;
-      this.pulseRaf = window.requestAnimationFrame(blinkControlKey);
-    } else {
-      console.log('this.selectedControlKey')
+    // const blinkControlKey = () => {
+    //   if (window.performance.now() >= now + 600) {
+    //     if (isOn) {
+    //       this.erase(keyRef.row, keyRef.col);
+    //       console.log('blinkOff')
+    //       isOn = false;
+    //     } else {
+    //       this.paintFromLaunchpad(this.selectedControlKey, true);
+    //       console.log('blinkOn')
+    //       isOn = true;
+    //     }
+    //     now = window.performance.now();
+    //   }
+    //   this.pulseRaf = window.requestAnimationFrame(blinkControlKey);
+    // }
+    // if (!this.selectedControlKey) {
+    //   console.log('!this.selectedControlKey')
+    //   this.selectedControlKey = key;
+    //   this.pulseRaf = window.requestAnimationFrame(blinkControlKey);
+    // } else {
+    //   console.log('this.selectedControlKey')
 
-      launchpadController.paintControlKeys();
-      this.selectedControlKey = key;
-      window.cancelAnimationFrame(this.pulseRaf);
-      this.pulseRaf = window.requestAnimationFrame(blinkControlKey);
+    //   launchpadController.paintControlKeys();
+    //   this.selectedControlKey = key;
+    //   window.cancelAnimationFrame(this.pulseRaf);
+    //   this.pulseRaf = window.requestAnimationFrame(blinkControlKey);
+    // }
+  }
+
+  handleLEDMatrixPainting() {
+    if(serialController.isConnected()) {
+      serialController.clear();
+      stateController.activePixels.forEach((pixelProps) => {
+        serialController.write(`${Math.abs(pixelProps.col - 7)},${Math.abs(pixelProps.row)}`);
+      });
     }
   }
 

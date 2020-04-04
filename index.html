@@ -7,11 +7,18 @@
   <style>
     body {
       background-color: black;
-      margin: 4.76682rem;
+    }
+    button {
+      background-color: #333350;
+      color: #fefeff;
+      padding: 1rem 0.8rem;
+      border: none;
+      font-size: 1rem;
     }
     #canvas-container {
       width: 100%;
       height: auto;
+      margin-top: 1rem
     }
 
     #canvas {
@@ -21,9 +28,11 @@
   </style>
 </head>
 <body>
+  <button id="serial-connection-btn">Connect to serial LED Matrix</button>
   <div id="canvas-container">
     <canvas id="canvas"></canvas>
   </div>
+  <button id="clear-btn">Clear pixels</button>
   <script src="./dist/app.js" defer type="module"></script>
 </body>
 </html>

@@ -146,7 +146,7 @@ class CanvasController {
   //   }
   // }
 
-  clearCanvas() {
+  clear() {
     this.ctx.clearRect(0, 0, this.canvasElem.width, this.canvasElem.height);
     this.drawGrid();
   }

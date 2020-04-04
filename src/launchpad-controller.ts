@@ -39,7 +39,7 @@ class LaunchpadController {
     if (!haveAtLeastOneDevice) {
       console.error("Couldn't find any MIDI device");
     }
-    this.clearLaunchpad();
+    this.clear();
     this.paintControlKeys();
   
   }
@@ -64,7 +64,7 @@ class LaunchpadController {
     this.midiOut.send([128, key, 0]);
   }
 
-  clearLaunchpad() {
+  clear() {
     for (let i = 0; i <= 120; i++) {
       this.erase(i);
     }
