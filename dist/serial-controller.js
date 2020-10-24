@@ -56,6 +56,9 @@ class SerialController {
         });
     }
     clear() {
+        if (!this.isConnected()) {
+            return;
+        }
         this.write('cls');
     }
 }

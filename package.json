@@ -1,0 +1,35 @@
+{
+  "name": "launchpadmini-mk2-paint",
+  "version": "1.0.0",
+  "description": "A demo project on web midi to control the lights on a Novation Launchpad Mini MK2",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {
+    "@types/webmidi": "^2.0.4"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UnJavaScripter/launchpadmini-mk2-paint.git"
+  },
+  "keywords": [
+    "web",
+    "midi",
+    "web",
+    "midi",
+    "launchpad",
+    "launchpad mini",
+    "novation",
+    "mk2",
+    "launchpad mini mk2",
+    "Focusrite"
+  ],
+  "author": "unJavaScripter",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/UnJavaScripter/launchpadmini-mk2-paint/issues"
+  },
+  "homepage": "https://github.com/UnJavaScripter/launchpadmini-mk2-paint#readme"
+}

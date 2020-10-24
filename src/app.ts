@@ -8,9 +8,11 @@ class App {
     window.addEventListener('DOMContentLoaded', async () => {
       const serialConnectionButton = document.getElementById('serial-connection-btn');
       const clearAllButton = document.getElementById('clear-btn');
+      
       clearAllButton.addEventListener('pointerdown', () => {
         eventDispatcher.clearAll();
       });
+      
       launchpadController.init();
       canvasController.init();
       serialController.init(serialConnectionButton);

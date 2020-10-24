@@ -41,10 +41,8 @@ class CanvasController {
     return this._canvasElem;
   }
 
-
   init() {
     this.drawGrid();
-    // this.ranDraw(20)
   }
 
   private handlePointerDown(event: MouseEvent) {
@@ -80,8 +78,6 @@ class CanvasController {
     }
     if(!color) {
       color = this.canvasColors.background;
-    }else {
-      console.log('pintando', row, col)
     }
 
     const pixelXstart = col * this.pixelSize.x;
@@ -102,7 +98,6 @@ class CanvasController {
   }
 
   erase(row: number, col: number) {
-    console.log('borrando en canvas', row, col)
     this.drawPixel(row, col);
   }
 

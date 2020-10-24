@@ -49,9 +49,11 @@ class SerialController {
   }
 
   clear() {
+    if(!this.isConnected()) {
+      return;
+    }
     this.write('cls');
   }
-
 }
 
 export const serialController = new SerialController();

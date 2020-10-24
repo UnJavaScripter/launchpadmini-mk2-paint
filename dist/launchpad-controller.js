@@ -21,16 +21,23 @@ class LaunchpadController {
         }
     }
     onMIDIInit(midiAccess) {
-        let haveAtLeastOneDevice = false;
+        let isNovationLaunchpadMini = false;
+        let isNovationLaunchpadMiniMK2 = false;
         for (let input of midiAccess.inputs.values()) {
             input.onmidimessage = this.MIDIMessageEventHandler.bind(this);
-            haveAtLeastOneDevice = true;
+            isNovationLaunchpadMini = input.name.includes('Launchpad Mini');
+            isNovationLaunchpadMiniMK2 = input.name === 'Launchpad Mini 4 MIDI 1';
         }
         for (let output of midiAccess.outputs.values()) {
             this.midiOut = output;
         }
-        if (!haveAtLeastOneDevice) {
-            console.error("Couldn't find any MIDI device");
+        if (!isNovationLaunchpadMiniMK2 && isNovationLaunchpadMini) {
+            console.warn('This launchpad MAY behave similarly to the MK2, but things may fail');
+        }
+        if (!isNovationLaunchpadMini) {
+            console.error("It seems like you don't have a Launchpad Mini MK2 connected. This demo only makes sense with one of those.");
+            alert("It seems like you don't have a Launchpad Mini MK2 connected. This demo only makes sense with one of those.");
+            return;
         }
         this.clear();
         this.paintControlKeys();
@@ -55,6 +62,7 @@ class LaunchpadController {
         for (let i = 0; i <= 120; i++) {
             this.erase(i);
         }
+        this.paintControlKeys();
     }
     paintControlKeys() {
         this.controlKeys.forEach((controlKey, index) => {

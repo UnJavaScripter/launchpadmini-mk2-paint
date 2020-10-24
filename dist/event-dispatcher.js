@@ -15,7 +15,6 @@ class EventDispatcher {
             [61, "#e8dd51"],
             [60, "#5bdc60"],
         ]);
-        this.launchpadCanvasEQTable = new Map();
         this.coordsAndKeys = [];
         this.coordsAndKeys = [
             [0, 1, 2, 3, 4, 5, 6, 7],
@@ -32,32 +31,22 @@ class EventDispatcher {
         for (let row = 0; row < this.coordsAndKeys.length; row++) {
             for (let col = 0; col < this.coordsAndKeys[row].length; col++) {
                 if (this.coordsAndKeys[row][col] === key) {
+                    console.log('👆🖌️ Painting from Launchpad', col, row);
                     this.paintToAll(row, col, isControlKey);
                     return;
                 }
             }
         }
     }
-    paintToAll(row, col, isControlKey = false) {
-        const selectedColorId = stateController.selectedPaintColor;
-        const selectedColorHex = this.colorsEQtable.get(stateController.selectedPaintColor);
-        if (!isControlKey) {
-            stateController.activePixels.set(this.coordsAndKeys[row][col], { color: selectedColorId, row, col });
-        }
-        canvasController.drawPixel(row, col, selectedColorHex);
-        launchpadController.paint(this.coordsAndKeys[row][col], selectedColorId);
-        this.handleLEDMatrixPainting();
-    }
     paintFromCanvas(row, col) {
+        console.log('🖱🖌️ Painting from App', col, row);
         const key = this.coordsAndKeys[row][col];
         const keyThatIsOn = stateController.activePixels.get(key);
         let syntRAF;
         if (keyThatIsOn && keyThatIsOn.color === stateController.selectedPaintColor) {
-            console.log('borrando');
             this.erase(row, col);
         }
         else {
-            console.log('pintando');
             this.paintToAll(row, col);
         }
         this.handleSynth(144, key, 127);
@@ -73,7 +62,18 @@ class EventDispatcher {
         });
         syntRAF = window.requestAnimationFrame(stopSynthSoundRAF);
     }
+    paintToAll(row, col, isControlKey = false) {
+        const selectedColorId = stateController.selectedPaintColor;
+        const selectedColorHex = this.colorsEQtable.get(stateController.selectedPaintColor);
+        if (!isControlKey) {
+            stateController.activePixels.set(this.coordsAndKeys[row][col], { color: selectedColorId, row, col });
+        }
+        canvasController.drawPixel(row, col, selectedColorHex);
+        launchpadController.paint(this.coordsAndKeys[row][col], selectedColorId);
+        this.handleLEDMatrixPainting();
+    }
     erase(row, col) {
+        console.log('🔳 Erasing', col, row);
         const key = this.coordsAndKeys[row][col];
         stateController.activePixels.delete(key);
         launchpadController.erase(key);
@@ -95,7 +95,7 @@ class EventDispatcher {
             const keyThatIsOn = stateController.activePixels.get(key);
             if (keyThatIsOn && keyThatIsOn.color === stateController.selectedPaintColor) {
                 const keyRef = stateController.activePixels.get(key);
-                console.log('mandnando a borrar');
+                console.log('💣 Erasing everything');
                 this.erase(keyRef.row, keyRef.col);
             }
             else {
@@ -105,14 +105,15 @@ class EventDispatcher {
         this.handleSynth(status, key, velocity);
     }
     handleSynth(status, key, velocity) {
-        // Mask off the lower nibble (MIDI channel, which we don't care about)
+        if (!window.enableSynth) {
+            return;
+        }
         switch (status & 0xf0) {
             case 0x90:
-                if (velocity != 0) { // if velocity != 0, this is a note-on message
+                if (velocity != 0) {
                     synth.noteOn(key);
                     return;
                 }
-            // if velocity == 0, fall thru: it's a note-off.  MIDI's weird, y'all.
             case 0x80:
                 synth.noteOff(key);
                 return;
@@ -129,8 +130,8 @@ class EventDispatcher {
     handleControlKey(key) {
         const keyRef = launchpadController.controlKeys.get(key);
         this.setSelectedPaintColor(keyRef.color);
-        let now = window.performance.now();
-        let isOn = false;
+        // let now = window.performance.now();
+        // let isOn = false;
         // const blinkControlKey = () => {
         //   if (window.performance.now() >= now + 600) {
         //     if (isOn) {
